@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Library, Disc, Search, LogIn, LogOut, Sun, Moon, GraduationCap, Newspaper } from 'lucide-react';
 import { View } from '../types';
 import { useI18n } from '../context/I18nContext';
@@ -44,7 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className={`
         flex flex-col h-full bg-white dark:bg-suno-sidebar border-r border-zinc-200 dark:border-white/5 flex-shrink-0 py-4 overflow-y-auto scrollbar-hide transition-all duration-300
         fixed left-0 top-0 z-50 md:relative
-        ${isOpen ? 'w-[200px]' : 'w-[72px]'}
+        ${isOpen ? 'w-[200px]' : 'w-[72px] max-md:w-0 max-md:overflow-hidden max-md:p-0'}
       `}>
       {/* Logo & Brand */}
       <div className="px-3 mb-8 flex items-center justify-between">
@@ -61,7 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </svg>
           </div>
           {isOpen && (
-            <span className="text-lg font-bold text-zinc-900 dark:text-white whitespace-nowrap">ACE Step</span>
+            <span className="text-lg font-bold text-zinc-900 dark:text-white whitespace-nowrap">Music Editor</span>
           )}
         </div>
         {/* Collapse/Expand Button */}

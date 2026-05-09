@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Newspaper, X, Star, Github } from 'lucide-react';
 import { useI18n } from '../context/I18nContext';
 import newsData from '../data/news.json';
@@ -142,7 +142,7 @@ export const NewsPage: React.FC = () => {
         >
           <Github size={20} className="text-zinc-500 dark:text-zinc-400 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">fspecii/ace-step-ui</p>
+            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Music Editor on GitHub</p>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">Star the repo to support the project</p>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-white/10 text-zinc-700 dark:text-zinc-300 text-sm font-medium group-hover:bg-amber-500/15 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors flex-shrink-0">
