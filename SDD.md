@@ -7,57 +7,71 @@ AI music generation interface for ACE-Step 1.5 model. Runs on Windows server wit
 ```
 Browser → music.agenc.ia (Caddy)
     │
-    ├── Frontend: React (port 3000)
-    │       └── Express static server (port 3001)
+    ├── Frontend: React + Vite + TypeScript (port 3000)
     │
-    └── Gradio Backend: ACE-Step 1.5 (port 8001)
-            └── /generation_wrapper (73 params)
+    └── Backend: Express + TypeScript (port 3001)
+            └── @gradio/client → ACE-Step API (port 8001, external process)
 
-Windows Scheduled Tasks:
-    ├── ACEStepAPI     (ONLOGON)   — Gradio Python process
-    ├── ACEStepBackend (ONSTART)   — Express server
-    └── ACEStepFrontend (ONSTART)  — React dev/static server
+Windows startup scripts:
+    ├── start-all.bat  — launches all 3 services (ACE-Step API + backend + frontend)
+    ├── start.bat      — frontend + backend only
+    └── setup.bat      — install dependencies
 ```
 
 ## Stack
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React |
-| API Server | Express.js (Node) |
-| AI Backend | Gradio + ACE-Step 1.5 (Python) |
+| Frontend | React 19 + Vite 6 + TypeScript |
+| API Server | Express 4 + TypeScript (tsx/ts-node) |
+| AI Backend | ACE-Step 1.5 (Gradio, external process — not in this repo) |
+| Auth | JWT (jsonwebtoken) |
+| DB | SQLite (better-sqlite3) |
 | GPU | RTX 3070 8GB VRAM |
 | OS | Windows Server |
-| Deploy | Windows Scheduled Tasks |
+| Deploy | Windows CMD scripts (start-all.bat) |
 | Proxy | Caddy → music.agenc.ia |
 
 ## Key Files
-- `frontend/src/App.jsx` — Main React UI, generation form
-- `frontend/src/api.js` — Calls to Express API layer
-- `server/index.js` — Express proxy to Gradio
-- `start_api.bat` / `start_backend.bat` / `start_frontend.bat` — Launch scripts for Scheduled Tasks
-- `gradio_app.py` — ACE-Step Gradio wrapper
+- `App.tsx` — Root React component (frontend entrypoint at repo root)
+- `components/` — UI components (Player, CreatePanel, LibraryView, TrainingPanel, etc.)
+- `services/api.ts` — Frontend API client
+- `services/geminiService.ts` — Gemini integration
+- `context/` — AuthContext, I18nContext, ResponsiveContext
+- `vite.config.ts` — Vite build config
+- `server/src/index.ts` — Express server entrypoint
+- `server/src/routes/` — API routes (generate, songs, playlists, lora, training, users, auth)
+- `server/src/services/acestep.ts` — ACE-Step Gradio client wrapper
+- `server/src/services/generationQueue.ts` — Generation queue management
+- `server/src/db/` — SQLite pool and migrations
+- `start-all.bat` — Starts ACE-Step API (external) + backend + frontend
+- `start.bat` — Starts backend + frontend only
+- `setup.bat` — Dependency installation
 
 ## API / Endpoints
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/generate` | Trigger music generation (proxied to Gradio) |
-| GET | `/api/status` | Job status |
+| POST | `/api/generate` | Trigger music generation |
+| GET | `/api/songs` | List generated songs |
+| GET | `/api/playlists` | List playlists |
+| POST | `/api/training` | Start LoRA training |
+| GET | `/api/lora` | List LoRA models |
+| POST | `/api/auth` | Authentication |
 | GET | `/api/health` | Health check |
-| POST | `/generation_wrapper` | Gradio direct (73 params, internal) |
+| POST | `/generation_wrapper` | Gradio direct (port 8001, internal — external process) |
 
-### Key Gradio Parameters
+### Key Gradio Parameters (proxied to ACE-Step)
 - `prompt` — text description of music
 - `duration` — output length (seconds)
 - `steps` — inference steps
 - `cfg_scale` — guidance scale
-- 69 additional generation parameters
 
 ## Deploy
 ```
-Windows Scheduled Tasks:
-  ACEStepAPI      → ONLOGON → python gradio_app.py
-  ACEStepBackend  → ONSTART → node server/index.js
-  ACEStepFrontend → ONSTART → node/serve frontend
+Windows (CMD):
+  start-all.bat
+    → ACE-Step API (external, port 8001) — requires ACESTEP_PATH set or ..\ACE-Step-1.5
+    → npm run dev (server: tsx src/index.ts, port 3001)
+    → npm run dev (frontend: vite, port 3000)
 
 Firewall rules:
   TCP 3000 inbound (Frontend)
@@ -71,17 +85,19 @@ Caddy:
 ## Integration
 - **Mission Monitor**: embedded as iframe in `#tools/music`
 - **Caddy**: TLS + reverse proxy on Windows server
+- **ACE-Step**: external Gradio process (not in repo); path set via `ACESTEP_PATH` env var
 - **GPU**: ~6GB VRAM per generation, ~2 min per 1 min of audio
 - **Windows Firewall**: TCP 3000 + 3001 rules required (Python exe may trigger auto-block rules)
 
 ## Known Issues
 - Windows auto-block firewall rules for Python executables — verify firewall before diagnosing port issues
-- Scheduled Tasks with ONLOGON require active user session on Windows server
-- RTX 3070 8GB limits concurrent generation; no queue implemented
-- Gradio 73-param API surface is brittle against ACE-Step version upgrades
+- start-all.bat requires ACESTEP_PATH env var or ACE-Step-1.5 directory adjacent to repo
+- RTX 3070 8GB limits concurrent generation; generationQueue.ts serializes requests
+- Gradio API surface is brittle against ACE-Step version upgrades
+- All SSH commands >10s to Windows server must use tmux
 
 ## Verification
 - `GET /api/health` → 200
 - Submit test prompt → verify audio file returned within ~2 min
 - Check GPU utilization via Task Manager during generation (~6GB VRAM)
-- Confirm Scheduled Tasks running: Task Scheduler → ACEStepAPI, ACEStepBackend, ACEStepFrontend
+- Confirm all services running: check open ports 3000, 3001, 8001
