@@ -1,0 +1,45 @@
+# Dependabot: so' security updates, agrupadas (caixa da Ponts inundada, 29-09-2026).
+#
+# - version updates desligadas (`open-pull-requests-limit: 0`): so' abrem PRs as
+#   correccoes de seguranca, como antes deste ficheiro existir. O `schedule` e'
+#   obrigatorio mas nao abre nada com o tecto a 0; para ligar version updates semanais,
+#   subir o tecto.
+# - security updates num PR por directorio e nivel: patch+minor juntos (fundem com o
+#   smoke de host do servico dependabot do MC), major a parte (espera suite). Um PR por
+#   pacote multiplicava rebases e emails a cada merge.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "Europe/Lisbon"
+    open-pull-requests-limit: 0
+    groups:
+      seguranca-patch-minor:
+        applies-to: security-updates
+        patterns: ["*"]
+        update-types: ["patch", "minor"]
+      seguranca-major:
+        applies-to: security-updates
+        patterns: ["*"]
+        update-types: ["major"]
+  - package-ecosystem: "npm"
+    directory: "/server"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "Europe/Lisbon"
+    open-pull-requests-limit: 0
+    groups:
+      seguranca-patch-minor:
+        applies-to: security-updates
+        patterns: ["*"]
+        update-types: ["patch", "minor"]
+      seguranca-major:
+        applies-to: security-updates
+        patterns: ["*"]
+        update-types: ["major"]
