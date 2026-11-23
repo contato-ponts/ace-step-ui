@@ -1,5 +1,7 @@
 # Windows Setup — ACE-Step UI (Ponts deployment)
 
+> **Descontinuado a 22-11-2026** (migração do server para Ubuntu bare metal, rpi-server#1497). Mantido como histórico/rollback; o server actual é Ubuntu 24.04 (units `acestep-backend`/`acestep-frontend`, código em `/opt/audio/ace-step-ui`).
+
 Fork de `ace-step/ace-step-ui` integrado ao stack Ponts. Música via ACE-Step 1.5, exposto em `music.agenc.ia` via Cloudflare tunnel.
 
 > Para docs do projeto upstream, ver `README.md`. Este arquivo cobre apenas a deployment Ponts no Windows server.
