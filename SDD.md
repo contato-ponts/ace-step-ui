@@ -1,7 +1,7 @@
 # SDD — ACE-Step UI
 
 ## Context
-AI music generation interface for ACE-Step 1.5 model. Runs on Windows server with RTX 3070 GPU. Provides a web UI accessible at music.agenc.ia, integrated into Mission Monitor.
+AI music generation interface for ACE-Step 1.5 model. Runs on the Ubuntu 24.04 bare metal server with RTX 3070 GPU (since 22-11-2026; was Windows). Provides a web UI accessible at music.agenc.ia, integrated into Mission Monitor.
 
 ## Architecture
 ```
@@ -12,7 +12,7 @@ Browser → music.agenc.ia (Caddy)
     └── Backend: Express + TypeScript (port 3001)
             └── @gradio/client → ACE-Step API (port 8001, external process)
 
-Windows startup scripts:
+Legacy Windows startup scripts (discontinued 22-11-2026; the Linux server runs systemd units `acestep-backend` + `acestep-frontend`, code in `/opt/audio/ace-step-ui`, ACE-Step in `/opt/audio/ACE-Step-1.5`; `start-all.sh`/`start.sh` exist for manual use):
     ├── start-all.bat  — launches all 3 services (ACE-Step API + backend + frontend)
     ├── start.bat      — frontend + backend only
     └── setup.bat      — install dependencies
@@ -27,8 +27,8 @@ Windows startup scripts:
 | Auth | JWT (jsonwebtoken) |
 | DB | SQLite (better-sqlite3) |
 | GPU | RTX 3070 8GB VRAM |
-| OS | Windows Server |
-| Deploy | Windows CMD scripts (start-all.bat) |
+| OS | Ubuntu 24.04 bare metal (was Windows Server until 22-11-2026) |
+| Deploy | systemd (`acestep-backend.service`, `acestep-frontend.service`); legacy: Windows CMD scripts (start-all.bat) |
 | Proxy | Caddy → music.agenc.ia |
 
 ## Key Files
@@ -67,16 +67,16 @@ Windows startup scripts:
 
 ## Deploy
 ```
-Windows (CMD):
+Linux (actual, desde 22-11-2026): systemctl status acestep-backend acestep-frontend
+Windows (CMD, descontinuado):
   start-all.bat
     → ACE-Step API (external, port 8001) — requires ACESTEP_PATH set or ..\ACE-Step-1.5
     → npm run dev (server: tsx src/index.ts, port 3001)
     → npm run dev (frontend: vite, port 3000)
 
-Firewall rules:
-  TCP 3000 inbound (Frontend)
-  TCP 3001 inbound (Backend API)
-  (Port 8001 internal only)
+Ports (Linux: backend/frontend listen on 127.0.0.1, exposed only via Caddy):
+  3000 (Frontend), 3001 (Backend API), 8001 internal only
+  (Windows firewall rules TCP 3000/3001 applied only to the old Windows host)
 
 Caddy:
   music.agenc.ia → localhost:3000
@@ -84,17 +84,17 @@ Caddy:
 
 ## Integration
 - **Mission Monitor**: embedded as iframe in `#tools/music`
-- **Caddy**: TLS + reverse proxy on Windows server
+- **Caddy**: TLS + reverse proxy on the server (native `caddy.service`, /etc/caddy/Caddyfile)
 - **ACE-Step**: external Gradio process (not in repo); path set via `ACESTEP_PATH` env var
 - **GPU**: ~6GB VRAM per generation, ~2 min per 1 min of audio
-- **Windows Firewall**: TCP 3000 + 3001 rules required (Python exe may trigger auto-block rules)
+- **Windows Firewall** (legacy, Windows host only): TCP 3000 + 3001 rules required (Python exe may trigger auto-block rules)
 
 ## Known Issues
-- Windows auto-block firewall rules for Python executables — verify firewall before diagnosing port issues
+- (Legacy, Windows host) auto-block firewall rules for Python executables — verify firewall before diagnosing port issues
 - start-all.bat requires ACESTEP_PATH env var or ACE-Step-1.5 directory adjacent to repo
 - RTX 3070 8GB limits concurrent generation; generationQueue.ts serializes requests
 - Gradio API surface is brittle against ACE-Step version upgrades
-- All SSH commands >10s to Windows server must use tmux
+- (Legacy, Windows host) SSH commands >10s to the Windows server had to use tmux; on Linux use `srv '<cmd>'`
 
 ## Verification
 - `GET /api/health` → 200
